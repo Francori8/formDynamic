@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  forms        Form[]
+
+  @@map("users")
+}
+
+model Form {
+  id        String     @id @default(uuid())
+  title     String
+  sections  Json
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  responses Response[]
+  links     FormLink[]
+  status      String     @default("DRAFT") // DRAFT | PUBLISHED | CLOSED
+  owner       User?      @relation(fields: [ownerId], references: [id])
+  ownerId     String?
+  pluginConfig Json?     // config for response-hook plugins, exporters, etc
+
+  @@map("forms")
+}
+
+model FormLink {
+  id            String          @id @default(uuid())
+  formId        String
+  form          Form            @relation(fields: [formId], references: [id])
+  token         String          @unique
+  label         String?         // nombre descriptivo opcional, ej: "Equipo ventas"
+  maxResponses  Int?            // null = ilimitado
+  responseCount Int             @default(0)
+  expiresAt     DateTime?
+  createdAt     DateTime        @default(now())
+  responses     Response[]
+  allowedEmails FormLinkEmail[]
+
+  @@map("form_links")
+}
+
+// Tabla del plugin otp-auth — códigos de verificación temporales
+model OtpCode {
+  id        String   @id @default(uuid())
+  email     String
+  linkId    String   // el link para el que se solicitó el OTP
+  code      String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@map("otp_codes")
+}
+
+// Tabla del plugin individual-link — emails permitidos por link
+model FormLinkEmail {
+  id     String   @id @default(uuid())
+  linkId String
+  link   FormLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  email  String
+
+  @@unique([linkId, email])
+  @@map("form_link_emails")
+}
+
+model Response {
+  id          String    @id @default(uuid())
+  formId      String
+  form        Form      @relation(fields: [formId], references: [id])
+  linkId      String?
+  link        FormLink? @relation(fields: [linkId], references: [id])
+  answers     Json      // Record<fieldId, value>
+  respondent  Json?     // { id, type, plugin } — opaco, lo pone el plugin de acceso
+  submittedAt DateTime  @default(now())
+
+  @@map("responses")
+}
