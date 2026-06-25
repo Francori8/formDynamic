@@ -37,8 +37,16 @@ export interface SectionFlowPlugin {
   ): { nextSectionId: string | null }; // null = submit (no hay más secciones)
 }
 
+export interface FormDisplayPlugin {
+  name: string;
+  type: 'form-display';
+  // Devuelve cómo debe presentarse el formulario al respondente
+  getDisplayMode(): 'all-sections' | 'step-by-step';
+}
+
 export type PurePlugin =
   | FieldTypePlugin
   | ValidatorPlugin
   | FieldVisibilityPlugin
-  | SectionFlowPlugin;
+  | SectionFlowPlugin
+  | FormDisplayPlugin;

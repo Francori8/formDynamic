@@ -18,7 +18,10 @@ export const defaultSectionFlowPlugin: SectionFlowPlugin = {
       }
     }
 
-    // Ninguna condición matcheó — seguir orden natural
+    // Ninguna condición matcheó — usar defaultJump si está definido, sino orden natural
+    if (flow.defaultJumpToSectionId) {
+      return { nextSectionId: flow.defaultJumpToSectionId };
+    }
     const currentIndex = allSectionIds.indexOf(currentSectionId);
     const nextId = allSectionIds[currentIndex + 1] ?? null;
     return { nextSectionId: nextId };

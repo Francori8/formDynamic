@@ -17,8 +17,8 @@ import { regexPlugin } from './validators/regex.plugin';
 import { minLengthPlugin } from './validators/min-length.plugin';
 import { maxLengthPlugin } from './validators/max-length.plugin';
 
-// Field visibility + section flow
-import { defaultVisibilityPlugin, defaultSectionFlowPlugin } from '@formdynamic/plugin-contracts';
+// Field visibility + section flow + form display
+import { defaultVisibilityPlugin, defaultSectionFlowPlugin, allSectionsDisplayPlugin } from '@formdynamic/plugin-contracts';
 
 // Access control
 import { publicLinkPlugin } from './access-control/public-link.plugin';
@@ -62,9 +62,10 @@ export class PluginsModule implements OnModuleInit {
     this.registry.register(minLengthPlugin);
     this.registry.register(maxLengthPlugin);
 
-    // Field visibility + section flow
+    // Field visibility + section flow + form display
     this.registry.register(defaultVisibilityPlugin);
     this.registry.register(defaultSectionFlowPlugin);
+    this.registry.register(allSectionsDisplayPlugin);
 
     // Access control — orden importa: otp-auth escribe verifiedEmail, individual-link lo lee
     this.registry.register(publicLinkPlugin);

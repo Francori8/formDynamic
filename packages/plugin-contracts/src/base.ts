@@ -32,7 +32,7 @@ export interface SectionFlowRule {
 
 export interface SectionFlow {
   conditions: SectionFlowRule[];
-  // si ninguna condición matchea → siguiente sección en orden natural
+  defaultJumpToSectionId?: string; // si ninguna condición matchea y está definido, salta a esta sección; si no, sigue el orden natural
 }
 
 export interface Section {

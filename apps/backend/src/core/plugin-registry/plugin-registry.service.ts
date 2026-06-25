@@ -6,6 +6,7 @@ import type {
   ValidatorPlugin,
   FieldVisibilityPlugin,
   SectionFlowPlugin,
+  FormDisplayPlugin,
   AccessControlPlugin,
   ResponseHookPlugin,
   ExporterPlugin,
@@ -25,6 +26,7 @@ export class PluginRegistryService implements OnModuleInit {
     'validator': PluginMap<ValidatorPlugin>;
     'field-visibility': PluginMap<FieldVisibilityPlugin>;
     'section-flow': PluginMap<SectionFlowPlugin>;
+    'form-display': PluginMap<FormDisplayPlugin>;
     'access-control': PluginMap<AccessControlPlugin>;
     'response-hook': PluginMap<ResponseHookPlugin>;
     'exporter': PluginMap<ExporterPlugin>;
@@ -34,6 +36,7 @@ export class PluginRegistryService implements OnModuleInit {
     'validator': new Map(),
     'field-visibility': new Map(),
     'section-flow': new Map(),
+    'form-display': new Map(),
     'access-control': new Map(),
     'response-hook': new Map(),
     'exporter': new Map(),
@@ -86,6 +89,10 @@ export class PluginRegistryService implements OnModuleInit {
 
   getSectionFlowPlugins(): SectionFlowPlugin[] {
     return Array.from(this.registry['section-flow'].values());
+  }
+
+  getFormDisplayPlugins(): FormDisplayPlugin[] {
+    return Array.from(this.registry['form-display'].values());
   }
 
   // Dado el conjunto de secciones y las respuestas actuales, devuelve los IDs
