@@ -5,6 +5,8 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test",
+    "test:e2e": "pnpm --filter backend test:e2e",
+    "test:all": "pnpm test && pnpm test:e2e",
     "lint": "turbo lint"
   },
   "devDependencies": {

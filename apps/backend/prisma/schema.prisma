@@ -46,6 +46,7 @@ model FormLink {
   createdAt     DateTime        @default(now())
   responses     Response[]
   allowedEmails FormLinkEmail[]
+  otpCodes      OtpCode[]
 
   @@map("form_links")
 }
@@ -54,7 +55,8 @@ model FormLink {
 model OtpCode {
   id        String   @id @default(uuid())
   email     String
-  linkId    String   // el link para el que se solicitó el OTP
+  linkId    String
+  link      FormLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
   code      String
   expiresAt DateTime
   usedAt    DateTime?

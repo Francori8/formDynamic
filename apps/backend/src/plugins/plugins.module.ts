@@ -28,6 +28,8 @@ import { OtpAuthController } from './access-control/otp-auth.controller';
 
 // Response hooks
 import { webhookPlugin } from './response-hooks/webhook.plugin';
+import { OwnerNotifyPlugin } from './response-hooks/owner-notify.plugin';
+import { RespondentConfirmationPlugin } from './response-hooks/respondent-confirmation.plugin';
 
 // Exporters
 import { csvExporter } from './exporters/csv.exporter';
@@ -36,13 +38,15 @@ import { jsonExporter } from './exporters/json.exporter';
 @Module({
   imports: [PluginRegistryModule, PrismaModule],
   controllers: [OtpAuthController],
-  providers: [IndividualLinkPlugin, OtpAuthPlugin],
+  providers: [IndividualLinkPlugin, OtpAuthPlugin, OwnerNotifyPlugin, RespondentConfirmationPlugin],
 })
 export class PluginsModule implements OnModuleInit {
   constructor(
     private readonly registry: PluginRegistryService,
     private readonly individualLinkPlugin: IndividualLinkPlugin,
     private readonly otpAuthPlugin: OtpAuthPlugin,
+    private readonly ownerNotifyPlugin: OwnerNotifyPlugin,
+    private readonly respondentConfirmationPlugin: RespondentConfirmationPlugin,
   ) {}
 
   onModuleInit() {
@@ -74,6 +78,8 @@ export class PluginsModule implements OnModuleInit {
 
     // Response hooks
     this.registry.register(webhookPlugin);
+    this.registry.register(this.ownerNotifyPlugin);
+    this.registry.register(this.respondentConfirmationPlugin);
 
     // Exporters
     this.registry.register(csvExporter);

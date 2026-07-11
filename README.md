@@ -49,7 +49,7 @@ FormDynamic/
 - Monorepo con Turborepo + pnpm
 - Backend NestJS (puerto 3001) con prefijo global `/api`
 - Frontend Next.js (puerto 3000)
-- PostgreSQL con Prisma — tablas: `users`, `forms`, `responses`, `form_links`, `form_link_emails`, `otp_codes`
+- PostgreSQL con Prisma — tablas: `users`, `forms`, `responses`, `form_links`, `form_link_emails`, `otp_codes` (con cascada completa en todas las tablas hijas de `form_links`)
 - Plugin registry con soporte para 8 tipos de plugin
 
 **Auth**
@@ -75,7 +75,7 @@ FormDynamic/
 - `webhook` — notificación POST a URL externa al recibir respuesta
 - `public-link` — acceso libre (comportamiento por defecto)
 - `individual-link` — acceso restringido a emails permitidos por link, con límite de respuestas
-- `otp-auth` — verificación de identidad via código de 6 dígitos enviado al email (por ahora se loguea en consola)
+- `otp-auth` — verificación de identidad via código de 6 dígitos enviado al email. Usa Resend — funciona con `RESEND_API_KEY` en el `.env`, sin la key loguea en consola
 - `csv` / `json` — exportadores de respuestas
 
 **Links individuales**
@@ -85,19 +85,17 @@ FormDynamic/
 - La respuesta queda asociada al email verificado (`respondent` en la BD)
 - Tab "Links" en la página de edición para gestionar links, copiar URL y configurar emails
 
+**Condicionales (builder + renderer)**
+- Visibilidad condicional por campo — panel "Mostrar solo si..." en el editor de cada campo, con operadores eq/neq/gt/lt/contains/vacío
+- Flujo condicional por sección — reglas "Si [campo] [operador] [valor] → ir a [sección]" con salto por defecto configurable
+- El renderer evalúa ambos con `defaultVisibilityPlugin` y `defaultSectionFlowPlugin` de `packages/plugin-contracts`
+- Las condiciones a medio configurar o con secciones borradas se descartan al guardar
+
 ### Lo que falta
 
-1. **Envío real de emails para OTP** — hay un `TODO` en `otp-auth.plugin.ts` donde conectar Resend, Nodemailer u otro servicio SMTP. Hoy el código se loguea en consola.
+1. **Autocomplete** — no existe contrato ni implementación.
 
-2. **Carga de emails existentes en la UI** — al abrir el panel de emails de un link, el textarea empieza vacío aunque ya haya emails guardados. Falta cargar los emails actuales desde la BD al expandir el link.
-
-3. **Página de respuestas con respondent** — la tabla de respuestas en `/forms/:id/responses` no muestra quién respondió. Con el campo `respondent` ahora disponible, se puede agregar esa columna.
-
-4. **Visibilidad condicional de campos** — el contrato `FieldVisibilityPlugin` existe pero no hay plugins implementados ni UI para configurar condiciones.
-
-5. **Flujo de secciones condicional** — el contrato `SectionFlowPlugin` existe pero no está implementado.
-
-6. **Autocomplete** — el contrato `AutocompletePlugin` existe pero no hay plugins ni UI.
+2. **Testing end-to-end de los condicionales** — la UI de visibilidad y flujo está implementada pero falta probarla a fondo en navegador.
 
 ## Levantar el proyecto
 

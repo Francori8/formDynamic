@@ -4,8 +4,7 @@ import { PluginRegistryService } from '../plugin-registry/plugin-registry.servic
 import type { Section, FieldConfig, ResponsePayload, Respondent, AccessContext } from '@formdynamic/plugin-contracts';
 
 interface PluginConfig {
-  webhook?: { enabled: boolean; url?: string };
-  [key: string]: unknown;
+  [pluginName: string]: { enabled: boolean; [key: string]: unknown } | undefined;
 }
 
 interface SubmitOptions {
@@ -132,6 +131,7 @@ export class ResponsesService {
     this.fireHooks(form.id, form.pluginConfig as PluginConfig | null, {
       formId: form.id,
       responseId: response.id,
+      respondent,
       answers,
       submittedAt: response.submittedAt,
     }).catch((err) => this.logger.error('Response hook error', err));
@@ -146,22 +146,25 @@ export class ResponsesService {
   ) {
     if (!pluginConfig) return;
 
-    if (pluginConfig.webhook?.enabled && pluginConfig.webhook.url) {
+    for (const plugin of this.registry.getResponseHookPlugins()) {
+      const config = pluginConfig[plugin.name];
+      if (!config?.enabled) continue;
+
       try {
-        const plugin = this.registry.getResponseHook('webhook');
-        const result = await plugin.onResponse(payload, { url: pluginConfig.webhook.url });
+        const result = await plugin.onResponse(payload, config);
         if (!result.success) {
-          this.logger.warn(`Webhook failed for form ${formId}: ${result.error}`);
+          this.logger.warn(`Hook "${plugin.name}" failed for form ${formId}: ${result.error}`);
         }
       } catch (err) {
-        this.logger.error(`Webhook plugin threw for form ${formId}`, err);
+        this.logger.error(`Hook "${plugin.name}" threw for form ${formId}`, err);
       }
     }
   }
 
-  async exportResponses(formId: string, format: string) {
+  async exportResponses(formId: string, format: string, ownerId: string) {
     const form = await this.prisma.form.findUnique({ where: { id: formId } });
     if (!form) throw new NotFoundException(`Form ${formId} not found`);
+    if (form.ownerId !== ownerId) throw new ForbiddenException('No tenes permiso para exportar las respuestas de este formulario');
 
     const responses = await this.prisma.response.findMany({
       where: { formId },
@@ -182,9 +185,10 @@ export class ResponsesService {
     });
   }
 
-  async findByForm(formId: string) {
+  async findByForm(formId: string, ownerId: string) {
     const form = await this.prisma.form.findUnique({ where: { id: formId } });
     if (!form) throw new NotFoundException(`Form ${formId} not found`);
+    if (form.ownerId !== ownerId) throw new ForbiddenException('No tenes permiso para ver las respuestas de este formulario');
 
     const responses = await this.prisma.response.findMany({
       where: { formId },

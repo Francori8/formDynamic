@@ -20,7 +20,7 @@ export const csvExporter: ExporterPlugin = {
     const rows = responses.map((r) => [
       r.responseId,
       new Date(r.submittedAt).toISOString(),
-      ...allFields.map((f) => escapeCsv(r.answers[f.id])),
+      ...allFields.map((f) => r.answers[f.id]),
     ]);
 
     const csv = [headers, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\n');

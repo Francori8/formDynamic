@@ -37,7 +37,7 @@ export class FormsService {
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, requesterId?: string) {
     const form = await this.prisma.form.findUnique({ where: { id } });
     if (!form) throw new NotFoundException(`Form ${id} not found`);
 
@@ -48,6 +48,12 @@ export class FormsService {
         return { ...field, schema: plugin.getSchema(field) };
       }),
     }));
+
+    const isOwner = requesterId !== undefined && requesterId === form.ownerId;
+    if (!isOwner) {
+      const { ownerId, pluginConfig, ...publicForm } = form;
+      return { ...publicForm, sections };
+    }
 
     return { ...form, sections };
   }

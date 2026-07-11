@@ -35,6 +35,8 @@ const PLUGIN_LABELS: Record<string, string> = {
   'individual-link': 'Enlace individual (con OTP)',
   'otp-auth': 'Verificación OTP',
   webhook: 'Webhook',
+  'owner-notify': 'Aviso por email al dueño',
+  'respondent-confirmation': 'Confirmación por email al respondente',
 };
 
 const PLUGIN_DESCRIPTIONS: Record<string, string> = {
@@ -45,4 +47,6 @@ const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   'individual-link': 'Solo las personas invitadas por email pueden responder.',
   'otp-auth': 'Verifica la identidad del respondente via código OTP enviado por email.',
   webhook: 'Envia un POST con los datos de cada respuesta a una URL externa.',
+  'owner-notify': 'Te avisa por email cada vez que llega una respuesta nueva.',
+  'respondent-confirmation': 'Le confirma por email al respondente que su respuesta fue recibida (requiere identidad verificada por email, ej. otp-auth).',
 };

@@ -137,6 +137,10 @@ export class PluginRegistryService implements OnModuleInit {
     return this.getOrThrow('response-hook', name);
   }
 
+  getResponseHookPlugins(): ResponseHookPlugin[] {
+    return Array.from(this.registry['response-hook'].values());
+  }
+
   getExporter(name: string): ExporterPlugin {
     return this.getOrThrow('exporter', name);
   }
