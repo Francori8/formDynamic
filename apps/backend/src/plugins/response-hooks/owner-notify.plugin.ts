@@ -21,10 +21,11 @@ export class OwnerNotifyPlugin implements ResponseHookPlugin {
 
     if (!form?.owner) return { success: false, error: 'Formulario sin dueño registrado' };
 
-    await this.mailer.send(
+    await this.mailer.sendTemplated(
       form.owner.email,
       `Nueva respuesta en "${form.title}"`,
-      `<p>Tu formulario <strong>${form.title}</strong> recibio una nueva respuesta.</p>`,
+      'Nueva respuesta recibida',
+      `<p>Tu formulario <strong>${form.title}</strong> recibió una nueva respuesta.</p>`,
     );
 
     return { success: true };

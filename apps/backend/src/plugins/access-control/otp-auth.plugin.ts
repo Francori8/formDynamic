@@ -16,9 +16,12 @@ export class OtpAuthPlugin implements AccessControlPlugin {
     private readonly mailer: MailerService,
   ) {}
 
-  async checkAccess(context: AccessContext): Promise<AccessResult> {
-    // Solo actúa si hay un link — sin link no hay verificación OTP
-    if (!context.link) {
+  async checkAccess(context: AccessContext, config?: unknown): Promise<AccessResult> {
+    // Con link: el link individual siempre exige OTP (comportamiento histórico).
+    // Sin link: solo exige OTP si el owner activó explícitamente este plugin en pluginConfig
+    // — si no, no aplica (deja pasar, otro plugin o el fallback público decide).
+    const isEnabledForOpenForm = (config as { enabled?: boolean } | undefined)?.enabled === true;
+    if (!context.link && !isEnabledForOpenForm) {
       return { allowed: true };
     }
 
@@ -28,17 +31,18 @@ export class OtpAuthPlugin implements AccessControlPlugin {
     const email = ctx.email;
 
     if (!email || !otpToken) {
-      return { allowed: false, reason: 'Se requiere verificación OTP para acceder a este link' };
+      return {
+        allowed: false,
+        reason: context.link
+          ? 'Se requiere verificación OTP para acceder a este link'
+          : 'Se requiere verificación OTP para responder este formulario',
+      };
     }
 
     const otp = await this.prisma.otpCode.findFirst({
-      where: {
-        email: email.toLowerCase().trim(),
-        linkId: context.link.id,
-        code: otpToken,
-        usedAt: null,
-        expiresAt: { gt: new Date() },
-      },
+      where: context.link
+        ? { email: email.toLowerCase().trim(), linkId: context.link.id, code: otpToken, usedAt: null, expiresAt: { gt: new Date() } }
+        : { email: email.toLowerCase().trim(), formId: context.formId, code: otpToken, usedAt: null, expiresAt: { gt: new Date() } },
     });
 
     if (!otp) {
@@ -54,13 +58,18 @@ export class OtpAuthPlugin implements AccessControlPlugin {
     // Escribir el email verificado en el contexto para que individual-link lo lea
     (context as AccessContext & { verifiedEmail?: string }).verifiedEmail = email.toLowerCase().trim();
 
-    return { allowed: true };
+    return {
+      allowed: true,
+      respondent: { id: email.toLowerCase().trim(), type: 'email', plugin: this.name },
+    };
   }
 
-  async requestOtp(email: string, linkId: string): Promise<void> {
-    // Invalidar OTPs anteriores del mismo email+link
+  async requestOtp(email: string, target: { linkId: string } | { formId: string }): Promise<void> {
+    const where = 'linkId' in target ? { linkId: target.linkId } : { formId: target.formId };
+
+    // Invalidar OTPs anteriores del mismo email+destino
     await this.prisma.otpCode.updateMany({
-      where: { email: email.toLowerCase().trim(), linkId, usedAt: null },
+      where: { email: email.toLowerCase().trim(), ...where, usedAt: null },
       data: { usedAt: new Date() },
     });
 
@@ -68,12 +77,13 @@ export class OtpAuthPlugin implements AccessControlPlugin {
     const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
 
     await this.prisma.otpCode.create({
-      data: { email: email.toLowerCase().trim(), linkId, code, expiresAt },
+      data: { email: email.toLowerCase().trim(), ...where, code, expiresAt },
     });
 
-    await this.mailer.send(
+    await this.mailer.sendTemplated(
       email.toLowerCase().trim(),
       'Tu código de acceso',
+      'Verificación de identidad',
       `<p>Tu código de acceso es: <strong style="font-size:1.5em;letter-spacing:0.2em">${code}</strong></p><p>Válido por ${OTP_TTL_MINUTES} minutos.</p>`,
     );
   }

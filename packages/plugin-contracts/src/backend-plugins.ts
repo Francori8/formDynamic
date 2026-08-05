@@ -25,7 +25,9 @@ export interface AccessControlPlugin {
   type: 'access-control';
   // context es mutable — un plugin puede enriquecerlo (ej: otp-auth escribe verifiedEmail)
   // para que plugins posteriores en la cadena lo lean
-  checkAccess(context: AccessContext): Promise<AccessResult>;
+  // config es la entrada de pluginConfig[name] del form — permite que el plugin sepa si el
+  // owner lo activó explícitamente, en vez de decidir solo por datos incidentales del contexto
+  checkAccess(context: AccessContext, config?: unknown): Promise<AccessResult>;
 }
 
 export interface HookResult {

@@ -13,9 +13,9 @@ Estado: sin probar todavía (2026-07-11) — completar la columna Resultado a me
 - [ ] Frontend corriendo (`pnpm dev`).
 - [ ] Tener a mano 2 direcciones de mail reales que puedas revisar (una como "owner", otra como "respondente" — pueden ser la misma cuenta con alias `+algo@gmail.com` si no tenés dos).
 
-## Caso 1 — OTP de acceso a link individual
+## Caso 1 — OTP de acceso a link individual (con lista de invitados)
 
-**Qué prueba:** que `otp-auth` manda el código real por mail (no solo lo loguea).
+**Qué prueba:** que `otp-auth` manda el código real por mail (no solo lo loguea), en el flujo de link individual.
 
 1. Logueate como owner, creá un formulario con un campo cualquiera, publicalo.
 2. En la pestaña de plugins del form, activá **"Enlace individual (con OTP)"**.
@@ -32,6 +32,26 @@ Estado: sin probar todavía (2026-07-11) — completar la columna Resultado a me
 | Código correcto | Acceso concedido, formulario visible | |
 | Reusar el mismo código | Rechazado (código ya usado) | |
 | Email NO invitado pide código | ¿Se manda igual o se bloquea antes? Revisar comportamiento | |
+
+## Caso 1b — OTP abierto por formulario (sin lista de invitados) — NUEVO
+
+**Qué prueba:** el caso agregado en esta sesión — cualquiera que entra al form público debe verificar su email por OTP, sin necesidad de un link individual ni lista de invitados. Distinto del Caso 1: acá no hay `individual-link` de por medio, es "Verificación OTP" sola.
+
+1. Logueate como owner, creá un formulario, publicalo.
+2. En la pestaña de plugins, activá **"Verificación OTP"** — dejá **desactivado** "Enlace individual (con OTP)".
+3. Abrí la URL pública del formulario (`/forms/:id`, NO un link `/l/:token`) en una ventana privada.
+4. Confirmá que aparece la pantalla de "Verificación requerida" pidiendo email, ANTES de mostrar el formulario.
+5. Ingresá cualquier email (no hace falta que esté pre-cargado en ningún lado) y pedí el código.
+6. Revisá la bandeja — ¿llegó el código?
+7. Cargalo, confirmá que pasa al formulario, respondé.
+
+| Paso | Resultado esperado | Resultado real |
+|---|---|---|
+| Entrar a `/forms/:id` con OTP activado | Pantalla de verificación, no el formulario directo | |
+| Pedir código con un email cualquiera (no invitado) | Se manda igual — no hay lista de invitados en este modo | |
+| Código correcto | Pasa al formulario, respuesta se guarda con `respondent` verificado | |
+| Reusar el mismo código | Rechazado | |
+| Entrar a `/forms/:id` de un form SIN "Verificación OTP" activada | Formulario se muestra directo, sin pedir nada | |
 
 ## Caso 2 — Aviso al dueño (`owner-notify`)
 

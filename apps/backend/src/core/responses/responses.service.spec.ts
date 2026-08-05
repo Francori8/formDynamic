@@ -90,15 +90,55 @@ describe('ResponsesService', () => {
       );
     });
 
-    it('rechaza si algún access-control plugin deniega', async () => {
+    it('rechaza si algún access-control plugin activado en pluginConfig deniega', async () => {
       const denyAccess: AccessControlPlugin = {
         name: 'deny',
         type: 'access-control',
         checkAccess: async () => ({ allowed: false, reason: 'No autorizado' }),
       };
       registry.register(denyAccess);
-      prisma.form.findUnique.mockResolvedValue(makeForm());
+      prisma.form.findUnique.mockResolvedValue(makeForm({ pluginConfig: { deny: { enabled: true } } }));
       await expect(service.submit('form-1', { f1: 'Juan' })).rejects.toThrow(ForbiddenException);
+    });
+
+    it('un access-control plugin registrado pero NO activado en pluginConfig no corre (gating)', async () => {
+      const denyAccess: AccessControlPlugin = {
+        name: 'deny',
+        type: 'access-control',
+        checkAccess: async () => ({ allowed: false, reason: 'No autorizado' }),
+      };
+      registry.register(denyAccess);
+      prisma.form.findUnique.mockResolvedValue(makeForm({ pluginConfig: null }));
+      prisma.response.create.mockResolvedValue({ id: 'r1', submittedAt: new Date() });
+      await expect(service.submit('form-1', { f1: 'Juan' })).resolves.toMatchObject({ id: 'r1' });
+    });
+
+    it('sin ningún plugin activado, cae al fallback public-link si está registrado', async () => {
+      const publicLink: AccessControlPlugin = {
+        name: 'public-link',
+        type: 'access-control',
+        checkAccess: async () => ({ allowed: true }),
+      };
+      registry.register(publicLink);
+      prisma.form.findUnique.mockResolvedValue(makeForm({ pluginConfig: null }));
+      prisma.response.create.mockResolvedValue({ id: 'r1', submittedAt: new Date() });
+      await expect(service.submit('form-1', { f1: 'Juan' })).resolves.toMatchObject({ id: 'r1' });
+    });
+
+    it('individual-link y otp-auth corren siempre que hay link, sin depender de pluginConfig', async () => {
+      const checkAccessLink = jest.fn().mockResolvedValue({ allowed: false, reason: 'requiere OTP' });
+      const individualLink: AccessControlPlugin = { name: 'individual-link', type: 'access-control', checkAccess: checkAccessLink };
+      registry.register(individualLink);
+
+      prisma.form.findUnique.mockResolvedValue(makeForm({ pluginConfig: null }));
+      prisma.formLink.findUnique.mockResolvedValue({
+        id: 'link-1', formId: 'form-1', maxResponses: null, responseCount: 0, expiresAt: null,
+      });
+
+      await expect(
+        service.submit('form-1', { f1: 'Juan' }, { linkToken: 'tok' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(checkAccessLink).toHaveBeenCalled();
     });
 
     it('lanza si el link no existe o no pertenece al form', async () => {

@@ -24,7 +24,7 @@ import { defaultVisibilityPlugin, defaultSectionFlowPlugin, allSectionsDisplayPl
 import { publicLinkPlugin } from './access-control/public-link.plugin';
 import { IndividualLinkPlugin } from './access-control/individual-link.plugin';
 import { OtpAuthPlugin } from './access-control/otp-auth.plugin';
-import { OtpAuthController } from './access-control/otp-auth.controller';
+import { OtpAuthController, FormOtpAuthController } from './access-control/otp-auth.controller';
 
 // Response hooks
 import { webhookPlugin } from './response-hooks/webhook.plugin';
@@ -37,7 +37,7 @@ import { jsonExporter } from './exporters/json.exporter';
 
 @Module({
   imports: [PluginRegistryModule, PrismaModule],
-  controllers: [OtpAuthController],
+  controllers: [OtpAuthController, FormOtpAuthController],
   providers: [IndividualLinkPlugin, OtpAuthPlugin, OwnerNotifyPlugin, RespondentConfirmationPlugin],
 })
 export class PluginsModule implements OnModuleInit {

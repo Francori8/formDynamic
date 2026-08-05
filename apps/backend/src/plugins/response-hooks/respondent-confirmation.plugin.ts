@@ -16,9 +16,10 @@ export class RespondentConfirmationPlugin implements ResponseHookPlugin {
       return { success: true };
     }
 
-    await this.mailer.send(
+    await this.mailer.sendTemplated(
       payload.respondent.id,
       'Recibimos tu respuesta',
+      'Respuesta confirmada',
       `<p>Confirmamos que recibimos tu respuesta al formulario.</p>`,
     );
 

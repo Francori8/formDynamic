@@ -109,6 +109,26 @@ describe('FormsService', () => {
       expect(result).toHaveProperty('ownerId', 'owner-1');
       expect(result).toHaveProperty('pluginConfig');
     });
+
+    it('calcula requiresOtp incluso para el owner (UX: el owner también debe ver el paso de verificación)', async () => {
+      const formWithOtp = { ...BASE_FORM, pluginConfig: { 'otp-auth': { enabled: true } } };
+      prisma.form.findUnique.mockResolvedValue(formWithOtp);
+
+      const asOwner = await service.findOne('form-1', 'owner-1');
+      expect(asOwner.requiresOtp).toBe(true);
+
+      const asStranger = await service.findOne('form-1', 'someone-else');
+      expect(asStranger.requiresOtp).toBe(true);
+
+      const asAnonymous = await service.findOne('form-1');
+      expect(asAnonymous.requiresOtp).toBe(true);
+    });
+
+    it('requiresOtp es false si otp-auth no está activado', async () => {
+      prisma.form.findUnique.mockResolvedValue(BASE_FORM);
+      const result = await service.findOne('form-1', 'owner-1');
+      expect(result.requiresOtp).toBe(false);
+    });
   });
 
   describe('updateContent', () => {

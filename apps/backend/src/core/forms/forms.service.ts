@@ -49,13 +49,15 @@ export class FormsService {
       }),
     }));
 
+    const requiresOtp = (form.pluginConfig as { 'otp-auth'?: { enabled?: boolean } } | null)?.['otp-auth']?.enabled === true;
+
     const isOwner = requesterId !== undefined && requesterId === form.ownerId;
     if (!isOwner) {
       const { ownerId, pluginConfig, ...publicForm } = form;
-      return { ...publicForm, sections };
+      return { ...publicForm, sections, requiresOtp };
     }
 
-    return { ...form, sections };
+    return { ...form, sections, requiresOtp };
   }
 
   async updateContent(id: string, dto: UpdateFormContentDto, ownerId: string) {

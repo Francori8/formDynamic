@@ -54,11 +54,26 @@ export class ResponsesService {
       otpToken: options.otpToken,
     };
 
+    const pluginConfig = form.pluginConfig as PluginConfig | null;
     const accessPlugins = this.registry.getAccessControlPlugins();
+
+    // individual-link y otp-auth, cuando hay link, deciden mirando datos del link específico
+    // (FormLinkEmail, OtpCode ligado a linkId) — no pluginConfig — así que corren siempre que
+    // haya link, manteniendo el comportamiento histórico de "el link individual siempre exige OTP".
+    // Sin link, otp-auth solo corre si el owner lo activó explícitamente (form abierto con OTP).
+    // Si nada aplica, public-link corre como fallback explícito (form sin restricciones).
+    const activePlugins = accessPlugins.filter((p) => {
+      if (resolvedLink && (p.name === 'individual-link' || p.name === 'otp-auth')) return true;
+      return pluginConfig?.[p.name]?.enabled === true;
+    });
+    const publicLinkFallback = accessPlugins.find((p) => p.name === 'public-link');
+    const pluginsToRun = activePlugins.length > 0 ? activePlugins : publicLinkFallback ? [publicLinkFallback] : [];
+
     let respondent: Respondent | undefined;
 
-    for (const plugin of accessPlugins) {
-      const result = await plugin.checkAccess(accessContext);
+    for (const plugin of pluginsToRun) {
+      const config = pluginConfig?.[plugin.name];
+      const result = await plugin.checkAccess(accessContext, config);
       if (!result.allowed) {
         throw new ForbiddenException(result.reason ?? 'Acceso denegado');
       }

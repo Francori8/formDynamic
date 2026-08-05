@@ -45,7 +45,7 @@ const PLUGIN_DESCRIPTIONS: Record<string, string> = {
   'all-sections': 'Muestra todas las secciones en una sola página en lugar de paso a paso.',
   'public-link': 'Cualquiera con el link puede responder el formulario.',
   'individual-link': 'Solo las personas invitadas por email pueden responder.',
-  'otp-auth': 'Verifica la identidad del respondente via código OTP enviado por email.',
+  'otp-auth': 'Cualquiera que entre al formulario debe verificar su email con un código OTP antes de responder — sin lista de invitados. Si además usás un enlace individual, ese link también exige OTP a los emails invitados.',
   webhook: 'Envia un POST con los datos de cada respuesta a una URL externa.',
   'owner-notify': 'Te avisa por email cada vez que llega una respuesta nueva.',
   'respondent-confirmation': 'Le confirma por email al respondente que su respuesta fue recibida (requiere identidad verificada por email, ej. otp-auth).',

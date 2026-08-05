@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, NotFoundException, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, NotFoundException, Param, Post } from '@nestjs/common';
 import { OtpAuthPlugin } from './otp-auth.plugin';
 import { PrismaService } from '../../core/prisma/prisma.service';
 
@@ -31,7 +31,34 @@ export class OtpAuthController {
     if (!link) throw new NotFoundException('Link no encontrado');
     if (link.expiresAt && link.expiresAt < new Date()) throw new BadRequestException('Este link ha expirado');
 
-    await this.otpAuthPlugin.requestOtp(body.email, body.linkId);
+    await this.otpAuthPlugin.requestOtp(body.email, { linkId: body.linkId });
+
+    return { message: 'Código enviado al email indicado' };
+  }
+}
+
+// Controlador público — solicitar OTP para un formulario sin link (verificación abierta)
+@Controller('forms/:formId/otp')
+export class FormOtpAuthController {
+  constructor(
+    private readonly otpAuthPlugin: OtpAuthPlugin,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  @Post()
+  async requestOtp(@Body() body: { email: string }, @Param('formId') formId: string) {
+    if (!body.email) throw new BadRequestException('email es requerido');
+
+    const form = await this.prisma.form.findUnique({ where: { id: formId } });
+    if (!form) throw new NotFoundException('Formulario no encontrado');
+    if (form.status !== 'PUBLISHED') throw new BadRequestException('Este formulario no está disponible');
+
+    const pluginConfig = form.pluginConfig as { 'otp-auth'?: { enabled?: boolean } } | null;
+    if (!pluginConfig?.['otp-auth']?.enabled) {
+      throw new BadRequestException('Este formulario no tiene verificación OTP activada');
+    }
+
+    await this.otpAuthPlugin.requestOtp(body.email, { formId });
 
     return { message: 'Código enviado al email indicado' };
   }

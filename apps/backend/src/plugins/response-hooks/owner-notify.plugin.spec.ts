@@ -8,7 +8,7 @@ function makePrismaMock() {
 }
 
 function makeMailerMock() {
-  return { send: jest.fn().mockResolvedValue(undefined) };
+  return { send: jest.fn().mockResolvedValue(undefined), sendTemplated: jest.fn().mockResolvedValue(undefined) };
 }
 
 const PAYLOAD: ResponsePayload = {
@@ -37,9 +37,10 @@ describe('OwnerNotifyPlugin', () => {
     const result = await plugin.onResponse(PAYLOAD, {});
 
     expect(result.success).toBe(true);
-    expect(mailer.send).toHaveBeenCalledWith(
+    expect(mailer.sendTemplated).toHaveBeenCalledWith(
       'owner@test.com',
       expect.stringContaining('Encuesta'),
+      expect.any(String),
       expect.any(String),
     );
   });
@@ -50,7 +51,7 @@ describe('OwnerNotifyPlugin', () => {
     const result = await plugin.onResponse(PAYLOAD, {});
 
     expect(result.success).toBe(false);
-    expect(mailer.send).not.toHaveBeenCalled();
+    expect(mailer.sendTemplated).not.toHaveBeenCalled();
   });
 
   it('falla sin romper si el form no existe', async () => {

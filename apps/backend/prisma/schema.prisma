@@ -30,6 +30,7 @@ model Form {
   owner       User?      @relation(fields: [ownerId], references: [id])
   ownerId     String?
   pluginConfig Json?     // config for response-hook plugins, exporters, etc
+  otpCodes    OtpCode[]
 
   @@map("forms")
 }
@@ -52,15 +53,18 @@ model FormLink {
 }
 
 // Tabla del plugin otp-auth — códigos de verificación temporales
+// Un OtpCode pertenece o a un FormLink (link individual) o a un Form (OTP abierto), nunca ambos ni ninguno — se valida en código
 model OtpCode {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   email     String
-  linkId    String
-  link      FormLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  linkId    String?
+  link      FormLink? @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  formId    String?
+  form      Form?     @relation(fields: [formId], references: [id], onDelete: Cascade)
   code      String
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@map("otp_codes")
 }
